@@ -1,24 +1,27 @@
 # Local Bronze Ingest
 
-Simple local ingest script for generating demo data for multiple domains and storing it only in the `bronze` layer with date/hour partitioning.
+Local ingest project that downloads real data from public internet sources and stores it only in the `bronze` layer under the local `data` folder.
 
-## What it does
+## Sources
 
-- Generates demo data for:
-  - `traffic`
-  - `weather`
-  - `alerts`
-  - `roads`
-- Writes data only to local `bronze`
-- Partitions output by:
-  - `ingest_date=YYYY-MM-DD`
-  - `hour=HH`
-- Can run locally for two hours and gradually write part of the data during that time
+- `traffic`: Lviv public transport GTFS-Realtime vehicle positions feed from `track.ua-gis.com`
+- `weather`: Open-Meteo API
+- `alerts`: `official_data_en.csv` from the `Vadimkin/ukrainian-air-raid-sirens-dataset` GitHub repository
+- `roads`: OpenStreetMap road data from Overpass API for Kyiv bounding box
+
+## What the script does
+
+- downloads data locally
+- writes data only to `data/bronze`
+- partitions by `ingest_date=YYYY-MM-DD/hour=HH`
+- adds metadata with surname `Yermolovych`
+- can run for two hours and keep fetching realtime sources during that time
 
 ## Repository structure
 
 ```text
 .
+|-- data/
 |-- ingest_bronze.py
 |-- requirements.txt
 |-- .gitignore
@@ -27,100 +30,63 @@ Simple local ingest script for generating demo data for multiple domains and sto
 
 ## Output structure
 
-By default, files are written to `data_lake/bronze/...`
-
-Example:
+Example layout:
 
 ```text
-data_lake/
+data/
 `-- bronze/
-    `-- domain=traffic/
-        `-- source=local_traffic_simulator/
-            `-- ingest_date=2026-04-06/
-                `-- hour=14/
-                    `-- part-20260406T140000Z-00001.jsonl
+    |-- domain=traffic/
+    |   `-- source=lviv_gtfs_rt_vehicle_positions/
+    |       `-- ingest_date=2026-04-06/
+    |           `-- hour=13/
+    |               |-- part-20260406T132215Z.pb
+    |               `-- part-20260406T132215Z.pb.meta.json
+    |-- domain=weather/
+    |-- domain=alerts/
+    `-- domain=roads/
 ```
 
-## Requirements
+## File formats
 
-- Python 3.10+
-
-No third-party packages are required.
+- `traffic`: raw GTFS-Realtime protobuf file (`.pb`) plus metadata sidecar
+- `weather`: wrapped JSON file (`.json`) plus metadata sidecar
+- `alerts`: JSON Lines file (`.jsonl`) plus metadata sidecar
+- `roads`: wrapped JSON file (`.json`) plus metadata sidecar
 
 ## Run
 
-Default run:
+One quick iteration:
 
 ```bash
-python ingest_bronze.py
+py ingest_bronze.py --iterations 1
 ```
 
-This will:
-
-- write data into `data_lake`
-- generate all supported data types
-- run for `2` hours
-- create a new batch every `5` minutes
-
-## Useful commands
-
-Run a single iteration:
+Default run for two hours:
 
 ```bash
-python ingest_bronze.py --iterations 1
+py ingest_bronze.py
 ```
 
-Write to a custom directory:
+Write to another root directory:
 
 ```bash
-python ingest_bronze.py --output-root storage
+py ingest_bronze.py --output-root my_data
 ```
 
-Run only selected data types:
+Fetch only some domains:
 
 ```bash
-python ingest_bronze.py --data-types traffic weather
+py ingest_bronze.py --data-types weather roads
 ```
 
-Change interval and batch size:
+Re-fetch static sources on every iteration too:
 
 ```bash
-python ingest_bronze.py --interval-seconds 60 --batch-size 10
-```
-
-Start from a fixed UTC datetime:
-
-```bash
-python ingest_bronze.py --start-datetime 2026-04-06T12:00:00Z
-```
-
-## Data format
-
-Each output file is written as JSON Lines (`.jsonl`), one record per line.
-
-Example record:
-
-```json
-{
-  "ingest_ts": "2026-04-06T12:00:00Z",
-  "source": "local_traffic_simulator",
-  "domain": "traffic",
-  "schema_v": 1,
-  "event_id": "traffic-uuid",
-  "payload": {
-    "road_id": "M01",
-    "speed_kmh": 42.3,
-    "congestion_level": "medium",
-    "confidence": 0.91,
-    "lat": 50.45123,
-    "lon": 30.52345,
-    "event_time": "2026-04-06T12:00:00Z"
-  }
-}
+py ingest_bronze.py --include-static-every-iteration
 ```
 
 ## Notes
 
-- The script currently generates demo data locally.
-- It does not upload data to cloud storage.
-- Generated output is ignored by Git via `.gitignore`.
+- `traffic` here is public transport realtime movement data, not car congestion speed API.
+- `alerts` is pulled from a public GitHub dataset snapshot, because commonly used alert APIs usually require an API key.
+- Generated files under `data/` are ignored by Git.
