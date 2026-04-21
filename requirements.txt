@@ -1,1 +1,1 @@
-# No external dependencies are required for the local bronze ingest script.
+pyspark>=3.5,<4
