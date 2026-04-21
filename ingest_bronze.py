@@ -5,6 +5,7 @@ import datetime as dt
 import io
 import json
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -396,8 +397,11 @@ def run_ingest(args: argparse.Namespace) -> None:
         for domain in args.data_types:
             if not should_fetch(domain, iteration_no, args.include_static_every_iteration):
                 continue
-            output_file = fetch_one(domain, output_root, event_time)
-            print(f"DOWNLOADED: {domain} -> {output_file}")
+            try:
+                output_file = fetch_one(domain, output_root, event_time)
+                print(f"DOWNLOADED: {domain} -> {output_file}")
+            except (TimeoutError, urllib.error.URLError, urllib.error.HTTPError) as exc:
+                print(f"FAILED: {domain} -> {exc}")
 
         iteration_no += 1
         if args.iterations and iteration_no > args.iterations:

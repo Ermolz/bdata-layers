@@ -49,7 +49,7 @@ data/
 ## File formats
 
 - `traffic`: raw GTFS-Realtime protobuf file (`.pb`) plus metadata sidecar
-- `weather`: wrapped JSON file (`.json`) plus metadata sidecar
+- `weather`: JSON Lines file (`.jsonl`) plus metadata sidecar
 - `alerts`: JSON Lines file (`.jsonl`) plus metadata sidecar
 - `roads`: wrapped JSON file (`.json`) plus metadata sidecar
 
@@ -77,6 +77,12 @@ Fetch only some domains:
 
 ```bash
 py ingest_bronze.py --data-types weather roads
+```
+
+Download a larger historical weather dataset:
+
+```bash
+py ingest_bronze.py --weather-history-days 30 --bulk-only
 ```
 
 Re-fetch static sources on every iteration too:
