@@ -22,7 +22,11 @@ ENV/
 .python-version
 
 # Local data outputs
-data/
+data/**
+!data/ml/
+!data/ml/maps/
+!data/ml/maps/*.html
+data/ml/maps/*smoke*.html
 data_lake/
 demo_output/
 
