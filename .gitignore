@@ -3,20 +3,34 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+*.so
+*.egg-info/
+build/
+dist/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+.coverage.*
+.hypothesis/
 
 # Virtual environments
 .venv/
 venv/
 env/
 ENV/
+.python-version
 
 # Local data outputs
 data/
 data_lake/
 demo_output/
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+*.bak
 
 # OS / editor files
 .DS_Store
